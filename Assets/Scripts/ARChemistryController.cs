@@ -7,8 +7,8 @@ using UnityEngine.XR.ARSubsystems;
 [System.Serializable]
 public class ChemistryElement
 {
-    public GameObject elementPrefab; // The prefab with model + info board
-    public string qrCodeId;          // Must match the tracked image name exactly
+    public GameObject elementPrefab; 
+    public string qrCodeId;          
 }
 
 public class ARChemistryController : MonoBehaviour
@@ -52,7 +52,6 @@ public class ARChemistryController : MonoBehaviour
     private Quaternion globalRotation;
     private string currentlyVisibleElement = "";
 
-    // Debug window variables
     private bool debugWindowVisible = true;
     private float debugWindowTimer = 0f;
     private Vector2 scrollPosition = Vector2.zero;
@@ -62,7 +61,6 @@ public class ARChemistryController : MonoBehaviour
     private Queue<string> recentLogs = new Queue<string>();
     private const int maxLogEntries = 10;
 
-    // Touch handling for debug window
     private bool isDraggingDebugWindow = false;
     private Vector2 dragStartPos;
     private Vector2 windowStartPos;
@@ -75,15 +73,12 @@ public class ARChemistryController : MonoBehaviour
 
     void InitializeSystem()
     {
-        // Initialize collections
         elementDatabase = new Dictionary<string, ChemistryElement>();
         preloadedElements = new Dictionary<string, GameObject>();
         trackingAnchors = new Dictionary<string, Transform>();
 
-        // Calculate global rotation from Euler angles
         globalRotation = Quaternion.Euler(globalRotationOffset);
 
-        // Build element database and preload all prefabs
         foreach (var element in elements)
         {
             if (element != null && element.elementPrefab != null && !string.IsNullOrEmpty(element.qrCodeId))
@@ -98,7 +93,6 @@ public class ARChemistryController : MonoBehaviour
             }
         }
 
-        // Setup AR tracking
         if (trackedImageManager != null)
         {
             trackedImageManager.trackedImagesChanged += OnTrackedImagesChanged;
@@ -114,18 +108,15 @@ public class ARChemistryController : MonoBehaviour
     {
         try
         {
-            // Create tracking anchor
             GameObject anchor = new GameObject($"Anchor_{element.qrCodeId}");
             anchor.transform.SetParent(transform);
             trackingAnchors[element.qrCodeId] = anchor.transform;
 
-            // Instantiate and setup element
             GameObject obj = Instantiate(element.elementPrefab, anchor.transform);
             obj.transform.localPosition = globalPositionOffset;
             obj.transform.localRotation = globalRotation;
             obj.transform.localScale = globalScale;
             
-            // Start hidden
             obj.SetActive(false);
             
             preloadedElements[element.qrCodeId] = obj;
@@ -138,19 +129,16 @@ public class ARChemistryController : MonoBehaviour
 
     void OnTrackedImagesChanged(ARTrackedImagesChangedEventArgs eventArgs)
     {
-        // Handle added images
         foreach (var trackedImage in eventArgs.added)
         {
             HandleImageAdded(trackedImage);
         }
 
-        // Handle updated images
         foreach (var trackedImage in eventArgs.updated)
         {
             HandleImageUpdated(trackedImage);
         }
 
-        // Handle removed images
         foreach (var trackedImage in eventArgs.removed)
         {
             HandleImageRemoved(trackedImage);
@@ -167,7 +155,6 @@ public class ARChemistryController : MonoBehaviour
             return;
         }
 
-        // Handle single element mode
         if (showOnlyOneElement && !string.IsNullOrEmpty(currentlyVisibleElement))
         {
             HideElement(currentlyVisibleElement);
@@ -186,20 +173,17 @@ public class ARChemistryController : MonoBehaviour
 
         if (trackedImage.trackingState == TrackingState.Tracking)
         {
-            // Show element if hidden and update position
             if (!preloadedElements[imageId].activeInHierarchy)
             {
                 ShowElement(imageId, trackedImage.transform);
             }
             else
             {
-                // Just update position
                 UpdateElementTransform(imageId, trackedImage.transform);
             }
         }
         else if (hideOnTrackingLost)
         {
-            // Instantly hide when tracking is lost
             HideElement(imageId);
             AddDebugLog($"Lost tracking: {imageId}");
         }
@@ -219,13 +203,10 @@ public class ARChemistryController : MonoBehaviour
 
         GameObject element = preloadedElements[imageId];
         
-        // Update anchor position to match tracked image
         UpdateElementTransform(imageId, trackedTransform);
         
-        // Show the element
         element.SetActive(true);
         
-        // Update currently visible element
         currentlyVisibleElement = imageId;
     }
 
@@ -237,7 +218,6 @@ public class ARChemistryController : MonoBehaviour
         GameObject element = preloadedElements[imageId];
         element.SetActive(false);
         
-        // Clear currently visible if this was it
         if (currentlyVisibleElement == imageId)
         {
             currentlyVisibleElement = "";
@@ -251,7 +231,6 @@ public class ARChemistryController : MonoBehaviour
 
         Transform anchor = trackingAnchors[imageId];
         
-        // Update anchor to match tracked image transform
         anchor.position = trackedTransform.position;
         anchor.rotation = trackedTransform.rotation;
     }
@@ -265,7 +244,6 @@ public class ARChemistryController : MonoBehaviour
         currentlyVisibleElement = "";
     }
 
-    // Debug logging
     void AddDebugLog(string message)
     {
         string timestamp = System.DateTime.Now.ToString("HH:mm:ss");
@@ -279,7 +257,6 @@ public class ARChemistryController : MonoBehaviour
         
         Debug.Log(logEntry);
         
-        // Reset timer when new log is added
         if (autoHideDebugAfter > 0)
         {
             debugWindowTimer = autoHideDebugAfter;
@@ -289,7 +266,6 @@ public class ARChemistryController : MonoBehaviour
 
     void Update()
     {
-        // Handle debug window auto-hide timer
         if (autoHideDebugAfter > 0 && debugWindowVisible)
         {
             debugWindowTimer -= Time.deltaTime;
@@ -299,12 +275,10 @@ public class ARChemistryController : MonoBehaviour
             }
         }
 
-        // Handle touch input for showing/hiding debug window
         if (Input.touchCount > 0)
         {
             Touch touch = Input.GetTouch(0);
             
-            // Triple tap to toggle debug window
             if (touch.phase == TouchPhase.Began && touch.tapCount >= 3)
             {
                 debugWindowVisible = !debugWindowVisible;
@@ -321,11 +295,9 @@ public class ARChemistryController : MonoBehaviour
         if (!showDebugWindow || !debugWindowVisible)
             return;
 
-        // Scale GUI for different screen sizes
         float scaleFactor = Screen.width / 800f;
         GUI.matrix = Matrix4x4.Scale(new Vector3(scaleFactor, scaleFactor, 1));
 
-        // Calculate window size and position
         float windowWidth = 350f;
         float windowHeight = showDetailedInfo ? 400f : 250f;
         
@@ -334,15 +306,12 @@ public class ARChemistryController : MonoBehaviour
         
         Rect windowRect = new Rect(posX, posY, windowWidth, windowHeight);
 
-        // Semi-transparent background
         GUI.color = new Color(0, 0, 0, 0.8f);
         GUI.Box(windowRect, "");
         GUI.color = Color.white;
 
-        // Begin debug window
         GUILayout.BeginArea(windowRect);
         
-        // Title bar with controls
         GUILayout.BeginHorizontal();
         GUILayout.Label("AR Chemistry Debug", GUI.skin.box);
         if (GUILayout.Button("X", GUILayout.Width(30)))
@@ -351,13 +320,11 @@ public class ARChemistryController : MonoBehaviour
         }
         GUILayout.EndHorizontal();
 
-        // Auto-hide timer display
         if (autoHideDebugAfter > 0)
         {
             GUILayout.Label($"Auto-hide in: {debugWindowTimer:F1}s");
         }
 
-        // Basic info
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label($"Preloaded Elements: {preloadedElements.Count}");
         GUILayout.Label($"Currently Visible: {(string.IsNullOrEmpty(currentlyVisibleElement) ? "None" : currentlyVisibleElement)}");
@@ -370,14 +337,12 @@ public class ARChemistryController : MonoBehaviour
         }
         GUILayout.Label($"Total Visible: {visibleCount}");
         
-        // AR Session info
         if (trackedImageManager != null)
         {
             GUILayout.Label($"Tracked Images: {trackedImageManager.trackables.count}");
         }
         GUILayout.EndVertical();
 
-        // Control buttons
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Hide All"))
         {
@@ -394,7 +359,6 @@ public class ARChemistryController : MonoBehaviour
         }
         GUILayout.EndHorizontal();
 
-        // Detailed information
         if (showDetailedInfo)
         {
             GUILayout.Label("Recent Logs:", GUI.skin.box);
@@ -407,7 +371,6 @@ public class ARChemistryController : MonoBehaviour
             
             GUILayout.EndScrollView();
 
-            // Element status
             GUILayout.Label("Element Status:", GUI.skin.box);
             foreach (var kvp in preloadedElements)
             {
@@ -416,12 +379,10 @@ public class ARChemistryController : MonoBehaviour
             }
         }
 
-        // Transform controls
         if (showTransformControls)
         {
             GUILayout.Label("Global Transform Controls:", GUI.skin.box);
             
-            // Scale controls
             GUILayout.BeginHorizontal();
             GUILayout.Label("Scale:", GUILayout.Width(50));
             if (GUILayout.Button("-", GUILayout.Width(30)))
@@ -437,7 +398,6 @@ public class ARChemistryController : MonoBehaviour
             }
             GUILayout.EndHorizontal();
 
-            // Reset button
             if (GUILayout.Button("Reset Transform"))
             {
                 SetGlobalScale(Vector3.one);
@@ -449,14 +409,12 @@ public class ARChemistryController : MonoBehaviour
 
         GUILayout.EndArea();
 
-        // Instructions
         GUI.color = new Color(1, 1, 1, 0.7f);
         GUI.Label(new Rect(10, Screen.height / scaleFactor - 60, 300, 50), 
                   "Triple-tap screen to toggle debug window\nSwipe down from top to show again");
         GUI.color = Color.white;
     }
 
-    // Public methods for runtime control
     public void SetGlobalScale(Vector3 newScale)
     {
         globalScale = newScale;
@@ -487,7 +445,6 @@ public class ARChemistryController : MonoBehaviour
         }
     }
 
-    // Utility methods
     public int GetPreloadedElementCount()
     {
         return preloadedElements.Count;
@@ -534,7 +491,6 @@ public class ARChemistryController : MonoBehaviour
 
     void OnDisable()
     {
-        // Unsubscribe from events
         if (trackedImageManager != null)
             trackedImageManager.trackedImagesChanged -= OnTrackedImagesChanged;
     }
