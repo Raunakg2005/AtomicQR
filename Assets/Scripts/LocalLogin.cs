@@ -11,19 +11,17 @@ public class LoginManager : MonoBehaviour
     public TMP_InputField passwordInput;
     public Toggle rememberMeToggle;
 
-    public RawImage successImage; // ✅ Login successful image
-    public RawImage errorImage;   // ❌ Invalid credentials image
+    public RawImage successImage;
+    public RawImage errorImage;  
 
     private string correctUsername = "RKG";
     private string correctPasswordHash = "2e1097c3411519a3733a0b48a533fd7428d2fba77e46bf317a063d223c9012f7"; // hash of "password"
 
     void Start()
     {
-        // Hide both images initially
         successImage.gameObject.SetActive(false);
         errorImage.gameObject.SetActive(false);
 
-        // Optional: auto login
         if (PlayerPrefs.GetInt("rememberMe", 0) == 1)
         {
             string savedUsername = PlayerPrefs.GetString("username", "");
@@ -39,7 +37,6 @@ public class LoginManager : MonoBehaviour
 
     public void OnLogin()
     {
-        // Hide both images before starting
         successImage.gameObject.SetActive(false);
         errorImage.gameObject.SetActive(false);
 
